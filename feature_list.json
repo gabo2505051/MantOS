@@ -1,0 +1,265 @@
+{
+  "project": "MantOS",
+  "description": "Rediseño de MantOS con enfoque en análisis de datos industriales. Fase 1: Ingesta. Fase 2: Motor de Análisis.",
+  "rules": {
+    "one_feature_at_a_time": true,
+    "require_tests_to_close": true,
+    "require_approved_spec_to_implement": true,
+    "require_security_review": false,
+    "require_ux_ui_design": false,
+    "valid_status": [
+      "pending",
+      "spec_ready",
+      "in_progress",
+      "done",
+      "blocked"
+    ],
+    "sdd_required_when": "feature has \"sdd\": true"
+  },
+  "features": [
+    {
+      "id": 1,
+      "name": "sap_raw_ingestion",
+      "title": "Ingesta de Datos Crudos SAP PM",
+      "description": "Pipeline ETL: CSV/JSON SAP OData -> SQLite. Schema normalizado con columnas derivadas (duration_min, is_ghost_stop), tablas de referencia, índices y vistas para el agente.",
+      "sdd": false,
+      "status": "done",
+      "assigned_to": [
+        "leader"
+      ],
+      "subtasks": []
+    },
+    {
+      "id": 2,
+      "name": "descriptive_analysis",
+      "title": "Análisis Descriptivo",
+      "description": "Módulo que responde '¿qué pasó?': estadísticas históricas, distribución de frecuencias por equipo/línea/tipo, tendencias temporales, top-N fallas, y matriz de calor de eventos por día/hora.",
+      "sdd": false,
+      "status": "done",
+      "assigned_to": [
+        "implementer"
+      ],
+      "subtasks": [
+        {
+          "id": "2.1",
+          "name": "frequency_analysis",
+          "title": "Análisis de Frecuencia de Fallas",
+          "description": "Top-N equipos por eventos, distribución PM01/PM02/PM03 por línea, frecuencia diaria/semanal/mensual. Output: DataFrames + CSV exportable.",
+          "status": "pending"
+        },
+        {
+          "id": "2.2",
+          "name": "temporal_heatmap",
+          "title": "Mapa de Calor Temporal",
+          "description": "Matriz hora×día de eventos. Detecta turnos con mayor frecuencia de paros. Output: DataFrame pivotado + PNG exportable.",
+          "status": "pending"
+        },
+        {
+          "id": "2.3",
+          "name": "duration_distribution",
+          "title": "Distribución de Duración de Eventos",
+          "description": "Histograma de duration_min por tipo (PM01/PM02/PM03), percentiles P50/P90/P99, detección de outliers (IQR). Output: estadísticas + CSV.",
+          "status": "pending"
+        },
+        {
+          "id": "2.4",
+          "name": "text_analysis_basic",
+          "title": "Análisis Básico de Texto de Fallas",
+          "description": "Tokenización y frecuencia de palabras clave en qmtxt/ltxtaufk. Normalización de texto sucio (mayúsculas, abreviaciones). Output: diccionario de términos frecuentes.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "diagnostic_analysis",
+      "title": "Análisis de Diagnóstico",
+      "description": "Módulo que responde '¿por qué pasó?': correlación entre equipos, análisis de Pareto, detección de paros fantasma, patrones de recurrencia y agrupamiento de fallas similares.",
+      "sdd": false,
+      "status": "done",
+      "assigned_to": [
+        "implementer"
+      ],
+      "subtasks": [
+        {
+          "id": "3.1",
+          "name": "pareto_analysis",
+          "title": "Análisis de Pareto de Fallas",
+          "description": "Regla 80/20: identifica los equipos que concentran el 80% del downtime. Separado por tipo de orden. Output: DataFrame + gráfico Pareto.",
+          "status": "pending"
+        },
+        {
+          "id": "3.2",
+          "name": "ghost_stop_audit",
+          "title": "Auditoría de Paros Fantasma",
+          "description": "Análisis de los 214 registros con is_ghost_stop=1: distribución por equipo/usuario/turno, patrones de quién los genera y cuándo. Output: reporte de anomalías.",
+          "status": "pending"
+        },
+        {
+          "id": "3.3",
+          "name": "recurrence_pattern",
+          "title": "Detección de Patrones de Recurrencia",
+          "description": "Identifica fallas repetitivas en el mismo equipo en ventanas de tiempo (24h, 7d, 30d). Detecta 'cascadas de fallas'. Output: lista de equipos problemáticos con score de recurrencia.",
+          "status": "pending"
+        },
+        {
+          "id": "3.4",
+          "name": "failure_clustering",
+          "title": "Agrupamiento de Fallas Similares",
+          "description": "Normaliza variantes de texto en qmtxt (micro-paro, MICROPARO, m.paro) y las agrupa en categorías canónicas. Output: mapa de canonicalización + tabla de frecuencias por categoría.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "kpi_calculator",
+      "title": "Calculadora de KPIs de Mantenimiento",
+      "description": "Motor de cálculo de indicadores clave: MTTR, MTBF, disponibilidad (uptime %), OEE simplificado, tasa de fallas por período. Configurable por equipo, línea, tipo de orden y rango temporal.",
+      "sdd": false,
+      "status": "done",
+      "assigned_to": [
+        "implementer"
+      ],
+      "subtasks": [
+        {
+          "id": "4.1",
+          "name": "mttr_calculator",
+          "title": "Cálculo de MTTR (Mean Time To Repair)",
+          "description": "MTTR = suma de duration_min correctivos / cantidad de correctivos (PM01). Por equipo y por período. Excluye ghost stops y PM03.",
+          "status": "pending"
+        },
+        {
+          "id": "4.2",
+          "name": "mtbf_calculator",
+          "title": "Cálculo de MTBF (Mean Time Between Failures)",
+          "description": "MTBF = tiempo entre fallas correctivas consecutivas por equipo. Requiere ordenar eventos por timestamp y calcular gap entre PM01 sucesivos.",
+          "status": "pending"
+        },
+        {
+          "id": "4.3",
+          "name": "availability_calculator",
+          "title": "Cálculo de Disponibilidad y Uptime %",
+          "description": "Disponibilidad = (período_analisis - downtime_total) / período_analisis. Downtime = suma duration_min PM01+PM02. Output: % disponibilidad por equipo y período.",
+          "status": "pending"
+        },
+        {
+          "id": "4.4",
+          "name": "failure_rate",
+          "title": "Tasa de Fallas por Período",
+          "description": "Número de eventos PM01 (correctivos) por semana/mes/trimestre por equipo. Tendencia ascendente/descendente. Output: serie temporal de tasa de fallas.",
+          "status": "pending"
+        },
+        {
+          "id": "4.5",
+          "name": "kpi_dashboard_data",
+          "title": "Endpoint de KPIs para Dashboard",
+          "description": "Función que retorna un dict JSON con todos los KPIs calculados para un equipo o línea en un rango temporal dado. Interface que consumirá el agente y el generador de reportes.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "predictive_analysis",
+      "title": "Análisis Predictivo",
+      "description": "Módulo que responde '¿qué va a pasar?': modelos estadísticos/ML para predicción de fallas, pronóstico de MTBF futuro, scoring de riesgo por equipo y detección de deterioro acelerado.",
+      "sdd": false,
+      "status": "done",
+      "assigned_to": [
+        "implementer"
+      ],
+      "subtasks": [
+        {
+          "id": "5.1",
+          "name": "trend_forecasting",
+          "title": "Pronóstico de Tendencia de Fallas",
+          "description": "Regresión lineal sobre serie temporal de eventos por equipo (últimos 90 días → próximos 30 días). Output: slope (positivo=deterioro), R², fecha estimada de próxima falla.",
+          "status": "pending"
+        },
+        {
+          "id": "5.2",
+          "name": "risk_scoring",
+          "title": "Score de Riesgo por Equipo",
+          "description": "Scoring compuesto (0-100) basado en: frecuencia de fallas reciente, MTBF decreciente, % paros fantasma, concentración de downtime. Output: ranking de equipos por riesgo.",
+          "status": "pending"
+        },
+        {
+          "id": "5.3",
+          "name": "anomaly_detection",
+          "title": "Detección de Anomalías Temporales",
+          "description": "Detecta semanas con frecuencia de eventos fuera de la banda normal (media ± 2σ). Alerta cuando un equipo supera su baseline histórico. Output: lista de anomalías con contexto.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "prescriptive_analysis",
+      "title": "Análisis Prescriptivo",
+      "description": "Módulo que responde '¿qué hacer?': recomendaciones automáticas de acción basadas en KPIs y análisis predictivo. Priorización de intervenciones preventivas y alertas de mantenimiento.",
+      "sdd": false,
+      "status": "done",
+      "assigned_to": [
+        "implementer"
+      ],
+      "subtasks": [
+        {
+          "id": "6.1",
+          "name": "maintenance_recommendations",
+          "title": "Motor de Recomendaciones de Mantenimiento",
+          "description": "Reglas basadas en umbrales de KPIs: si MTBF < X o risk_score > Y → recomendar intervención PM02. Output: lista priorizada de recomendaciones con justificación.",
+          "status": "pending"
+        },
+        {
+          "id": "6.2",
+          "name": "intervention_prioritization",
+          "title": "Priorización de Intervenciones",
+          "description": "Ranking de equipos que necesitan atención urgente (próxima semana) vs planificable (próximo mes). Basado en score de riesgo + disponibilidad. Output: plan de acción sugerido.",
+          "status": "pending"
+        },
+        {
+          "id": "6.3",
+          "name": "alert_engine",
+          "title": "Motor de Alertas",
+          "description": "Genera alertas cuando: un equipo supera umbral de eventos en 7 días, MTBF cae > 30% respecto a baseline, o se detecta anomalía temporal. Output: lista de alertas activas con severidad.",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "report_generator",
+      "title": "Generador de Reportes",
+      "description": "Motor que consolida los análisis en reportes estructurados: reporte semanal de planta, reporte por equipo, reporte de KPIs ejecutivo. Formatos: Markdown (para el agente) y texto plano estructurado.",
+      "sdd": false,
+      "status": "done",
+      "assigned_to": [
+        "implementer"
+      ],
+      "subtasks": [
+        {
+          "id": "7.1",
+          "name": "weekly_plant_report",
+          "title": "Reporte Semanal de Planta",
+          "description": "Consolida: total eventos por línea, top-3 equipos con más fallas, ghost stops de la semana, alertas activas, KPIs semanales. Output: Markdown estructurado.",
+          "status": "pending"
+        },
+        {
+          "id": "7.2",
+          "name": "equipment_report",
+          "title": "Reporte por Equipo",
+          "description": "Deep-dive de un equipo: historial de fallas, MTTR/MTBF, score de riesgo, recomendaciones, próxima acción sugerida. Output: Markdown estructurado.",
+          "status": "pending"
+        },
+        {
+          "id": "7.3",
+          "name": "executive_kpi_report",
+          "title": "Reporte Ejecutivo de KPIs",
+          "description": "Resumen gerencial: disponibilidad por línea, equipos críticos, comparativo período anterior, tendencia global. Formato conciso para alta dirección. Output: Markdown estructurado.",
+          "status": "pending"
+        }
+      ]
+    }
+  ]
+}

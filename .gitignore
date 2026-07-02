@@ -1,0 +1,42 @@
+# ============================================================
+# MantOS — .gitignore
+# ============================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+.env
+
+# Base de datos SQLite (se genera localmente con ingest.py)
+*.db
+*.sqlite
+
+# Outputs generados en runtime — no versionar
+data/assets/
+data/reports/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Archivos temporales
+*.tmp
+*.log
