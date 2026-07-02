@@ -16,6 +16,22 @@ from analysis.kpis import KPICalculator
 from analysis.base import AnalysisBase
 
 DB_PATH = _ROOT / "data" / "mantos.db"
+CSV_PATH = _ROOT / "data" / "sap_raw_export.csv"
+
+# -----------------------------------------------------------------------------
+# Auto-inicialización: genera la DB si no existe (necesario en Streamlit Cloud)
+# -----------------------------------------------------------------------------
+if not DB_PATH.exists():
+    from ingestion.ingest import load_data, init_db, insert_orders
+    from ingestion.catalog_loader import load_reference_tables
+    with st.spinner("⚙️ Inicializando base de datos por primera vez..."):
+        df = load_data(CSV_PATH)
+        conn = init_db(DB_PATH)
+        load_reference_tables(conn)
+        insert_orders(conn, df)
+        conn.close()
+    st.success("✅ Base de datos lista.")
+    st.rerun()
 
 # Page config
 st.set_page_config(page_title="MantOS Dashboard", page_icon="🏭", layout="wide")
