@@ -173,8 +173,10 @@ Ver [`docs/catalogo_tecnico_planta.md`](docs/catalogo_tecnico_planta.md) para el
 | 1 — Ingesta de datos | `ingestion/` | ✅ Completo |
 | 2 — Motor de análisis | `analysis/` | ✅ Completo |
 | 3 — Dashboard MVP | `streamlit_app.py` | ✅ Completo |
-| 4 — Agente LLM | `agent/` | 🔜 Próxima versión |
-| 5 — Integración SAP real | OData API | 🔜 Próxima versión |
+| 4 — Analisis Prdictivo con ML | `analysis/predictive.py` | 🔜 Próxima versión |
+| 5 — Agente LLM | `agent/` | 🔜 Próxima versión |
+| 6 — Integración SAP real | OData API | 🔜 Próxima versión |
+| 7 — Lectura de documentacion con IA | `docsAI/` | 🔜 Próxima versión |
 
 ---
 
