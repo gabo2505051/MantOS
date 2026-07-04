@@ -1,8 +1,8 @@
 # MantOS 🏭
 
-**Sistema de Análisis de Mantenimiento Industrial — MVP v1.0**
+**Sistema de Análisis de Mantenimiento Industrial — MVP v2.0**
 
-MantOS procesa órdenes de trabajo históricas de SAP PM para detectar patrones de falla, calcular KPIs operacionales (MTTR, MTBF, disponibilidad) y presentar insights accionables al equipo de mantenimiento a través de un dashboard interactivo.
+MantOS procesa órdenes de trabajo históricas de SAP PM para detectar patrones de falla, calcular KPIs operacionales (MTTR, MTBF, disponibilidad), predecir fallas mediante Machine Learning y presentar insights accionables al equipo de mantenimiento a través de un dashboard interactivo de 5 pestañas.
 
 > Desarrollado sobre datos sintéticos que simulan la estructura real de SAP Plant Maintenance (tablas AUFK, QMIH, ILOA, EQUI).
 
@@ -14,12 +14,12 @@ MantOS procesa órdenes de trabajo históricas de SAP PM para detectar patrones 
 |---|---|
 | **Ingesta de datos** | Lee exports SAP PM (CSV/XLS/XLSX) y los normaliza en una base de datos SQLite |
 | **KPIs automáticos** | Calcula MTTR, MTBF, disponibilidad y tasa de falla por equipo y línea |
-| **Análisis descriptivo** | Distribución de eventos, Pareto de fallas, tendencias temporales |
-| **Análisis diagnóstico** | Detección de equipos críticos, análisis de recurrencia, correlaciones |
-| **Análisis predictivo** | Proyección de fallas y estimación de próximas intervenciones |
-| **Análisis prescriptivo** | Recomendaciones priorizadas de acción por equipo |
+| **Análisis descriptivo** | Distribución de eventos, top equipos por falla, mapa de calor temporal |
+| **Análisis diagnóstico** | Pareto de downtime (regla 80/20), detección de paros fantasma, recurrencia |
+| **Análisis predictivo (ML)** | Random Forest con horizonte 7d y 14d — AUC-ROC > 0.93, score de riesgo compuesto, detección de anomalías |
+| **Análisis prescriptivo** | Recomendaciones priorizadas ML+KPI, plan URGENTE/PLANIFICADO/MONITOREO, score de salud de planta |
 | **Reportes exportables** | Generación de reportes ejecutivos y por equipo en PDF y Markdown |
-| **Dashboard Streamlit** | Interfaz web interactiva con filtros por línea, equipo y período |
+| **Dashboard Streamlit** | Interfaz web interactiva de 5 pestañas con filtros por línea, equipo y período |
 
 ---
 
@@ -173,10 +173,11 @@ Ver [`docs/catalogo_tecnico_planta.md`](docs/catalogo_tecnico_planta.md) para el
 | 1 — Ingesta de datos | `ingestion/` | ✅ Completo |
 | 2 — Motor de análisis | `analysis/` | ✅ Completo |
 | 3 — Dashboard MVP | `streamlit_app.py` | ✅ Completo |
-| 4 — Analisis Prdictivo con ML | `analysis/predictive.py` | 🔜 Próxima versión |
-| 5 — Agente LLM | `agent/` | 🔜 Próxima versión |
-| 6 — Integración SAP real | OData API | 🔜 Próxima versión |
-| 7 — Lectura de documentacion con IA | `docsAI/` | 🔜 Próxima versión |
+| 4 — Análisis Predictivo con ML | `analysis/predictive.py` | ✅ Completo |
+| 5 — Análisis Prescriptivo | `analysis/prescriptive.py` | ✅ Completo |
+| 6 — Agente LLM | `agent/` | 🔜 Próxima versión |
+| 7 — Integración SAP real | OData API | 🔜 Próxima versión |
+| 8 — Lectura de documentacion con IA | `docsAI/` | 🔜 Próxima versión |
 
 ---
 

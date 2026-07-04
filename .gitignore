@@ -21,10 +21,21 @@ env/
 # Base de datos SQLite (se genera localmente con ingest.py)
 *.db
 *.sqlite
+# SQLite WAL/SHM files (lock files generados en runtime)
+*.db-shm
+*.db-wal
+
+# Modelo ML entrenado (binario pesado - se re-entrena localmente)
+data/models/*.pkl
+# Mantener el metadata del modelo (liviano, docúmenta el rendimiento)
+!data/models/feature_metadata.json
 
 # Outputs generados en runtime — no versionar
 data/assets/
 data/reports/
+
+# Scripts de prueba temporales
+test_kpis.py
 
 # IDEs
 .vscode/

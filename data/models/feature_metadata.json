@@ -1,0 +1,39 @@
+{
+  "trained_at": "2026-07-03T22:52:58+00:00",
+  "n_samples": 732,
+  "auc_roc_7d": 0.9382,
+  "auc_roc_14d": 0.9414,
+  "features": [
+    "events_7d",
+    "events_30d",
+    "events_60d",
+    "avg_duration_min",
+    "pct_pm01",
+    "days_since_last_failure",
+    "recurrence_score",
+    "ghost_pct",
+    "dayofweek_mode"
+  ],
+  "importance_7d": {
+    "events_7d": 0.0278,
+    "events_30d": 0.0318,
+    "events_60d": 0.0395,
+    "avg_duration_min": 0.0827,
+    "pct_pm01": 0.3286,
+    "days_since_last_failure": 0.2959,
+    "recurrence_score": 0.0767,
+    "ghost_pct": 0.0,
+    "dayofweek_mode": 0.1171
+  },
+  "importance_14d": {
+    "events_7d": 0.0246,
+    "events_30d": 0.0461,
+    "events_60d": 0.0544,
+    "avg_duration_min": 0.1812,
+    "pct_pm01": 0.2926,
+    "days_since_last_failure": 0.2484,
+    "recurrence_score": 0.0463,
+    "ghost_pct": 0.0,
+    "dayofweek_mode": 0.1064
+  }
+}
