@@ -1,7 +1,7 @@
 GNU GENERAL PUBLIC LICENSE
 Version 3, 29 June 2007
 
-Copyright (c) 2026 Gabriel Ignacio Castro Guevara & Phasor Logic
+Copyright (c) 2026 Gabriel Ignacio Castro Guevara & Phasor Logic <https://phasorlogic.com>
 
 Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is not allowed.
 
@@ -33,3 +33,6 @@ To do so, attach the following notices to the program. It is safest to attach th
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+the library.  If this is what you want to do, use the GNU Lesser General
+Public License instead of this License.  But first, please read
+<https://www.gnu.org/licenses/why-not-lgpl.html>.
