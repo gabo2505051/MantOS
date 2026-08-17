@@ -94,9 +94,11 @@ class PrescriptiveAnalysis(AnalysisBase):
         mano_obra_cnt = 0
         maquina_cnt = 0
         if not df_eq_orders.empty:
-            cats = df_eq_orders.apply(lambda r: classify_cause_5m(r["qmtxt"], r["ltxtaufk"], r["auart"])["categoria_5m"], axis=1)
+            cat_list = [classify_cause_5m(q, l, a)["categoria_5m"] for q, l, a in zip(df_eq_orders["qmtxt"], df_eq_orders["ltxtaufk"], df_eq_orders["auart"])]
+            cats = pd.Series(cat_list, index=df_eq_orders.index)
             mano_obra_cnt = int(cats.isin(["MANO DE OBRA", "MANO_DE_OBRA"]).sum())
             maquina_cnt = int((cats == "MAQUINA").sum())
+
 
 
         # ── Regla ML 1: Probabilidad alta de falla en 7 días ──

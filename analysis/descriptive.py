@@ -536,16 +536,23 @@ class DescriptiveAnalysis(AnalysisBase):
         if df.empty:
             return pd.DataFrame(columns=["categoria_5m", "causa_simplificada", "event_count", "downtime_min", "pct_of_total"])
 
-        classified = df.apply(lambda r: classify_cause_5m(r["qmtxt"], r["ltxtaufk"], r["auart"]), axis=1)
-        df["categoria_5m"] = [c["categoria_5m"] for c in classified]
-        df["causa_simplificada"] = [c["causa_simplificada"] for c in classified]
+        cats, causes = [], []
+        for q, l, a in zip(df["qmtxt"], df["ltxtaufk"], df["auart"]):
+            res = classify_cause_5m(q, l, a)
+            cats.append(res.get("categoria_5m", "N/A"))
+            causes.append(res.get("causa_simplificada", "N/A"))
+
+        df["categoria_5m"] = cats
+        df["causa_simplificada"] = causes
 
         if exclude_na:
-            df = df[~df["categoria_5m"].isin(["N/A", "N_A"])]
+            df = df[~df["categoria_5m"].astype(str).str.upper().isin(["N/A", "N_A"])]
 
-        if categoria_5m and categoria_5m not in ("Todas", "TODAS"):
-            target_cat = categoria_5m.replace("_", " ").upper()
-            df = df[df["categoria_5m"].str.replace("_", " ").str.upper() == target_cat]
+        if categoria_5m and str(categoria_5m).upper() not in ("TODAS", "ALL"):
+            target_cat = str(categoria_5m).replace("_", " ").upper()
+            cat_series = df["categoria_5m"].astype(str).str.replace("_", " ").str.upper()
+            df = df[cat_series == target_cat]
+
 
 
         if df.empty:
