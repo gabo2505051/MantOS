@@ -142,6 +142,15 @@ def load_plant_health(linea, start, end):
 def load_recommendations(equnr, start, end):
     return PrescriptiveAnalysis(DB_PATH).get_recommendations(equnr=equnr, start_date=start, end_date=end)
 
+@st.cache_data
+def load_top_causes(linea, equnr, categoria_5m, exclude_na, start, end):
+    desc = DescriptiveAnalysis(DB_PATH)
+    return desc.get_top_failure_causes(
+        linea=linea, equnr=equnr, categoria_5m=categoria_5m,
+        exclude_na=exclude_na, start_date=start, end_date=end, top_n=10
+    )
+
+
 # ─── Auto-train ML model on first run ─────────────────────────────────────────
 @st.cache_resource(show_spinner="🤖 Entrenando modelo ML (primera vez — puede tardar ~60s)...")
 def ensure_model_trained():
@@ -281,7 +290,7 @@ with tab1:
 with tab2:
     st.header(f"Análisis Descriptivo {scope_label}")
 
-    col1, col2 = st.columns([2, 1])
+    col1, col2 = st.columns([1, 1])
     with col1:
         st.subheader("Top Equipos por Fallas")
         df_top = load_top_equipment(tuple(auart_codes), p_linea, start_iso, end_iso)
@@ -291,25 +300,50 @@ with tab2:
                          title="Equipos con Mayor Cantidad de Eventos",
                          labels={"event_count": "Cantidad de Eventos", "nombre_corto": "Equipo"},
                          color="downtime_min", color_continuous_scale="Reds")
-            fig.update_layout(yaxis={"categoryorder": "total ascending"})
+            fig.update_layout(yaxis={"categoryorder": "total ascending"}, height=460)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No hay datos para mostrar.")
 
     with col2:
-        st.subheader("Términos Frecuentes")
-        kws = load_top_keywords(p_equnr, p_linea, start_iso, end_iso)
-        if kws:
-            df_kws = pd.DataFrame(kws, columns=["Término", "Frecuencia"])
-            fig = px.bar(df_kws.head(10), x="Frecuencia", y="Término", orientation="h",
-                         title="Top 10 Palabras Clave")
-            fig.update_layout(yaxis={"categoryorder": "total ascending"}, height=400)
-            st.plotly_chart(fig, use_container_width=True)
+        st.subheader("Top Causas Simplificadas (Metodología 5M)")
+        c_f1, c_f2 = st.columns([1, 1])
+        with c_f1:
+            sel_5m_cat = st.selectbox(
+                "Categoría 5M",
+                ["Todas", "MAQUINA", "MANO DE OBRA", "METODO", "MATERIAL"],
+                index=0, key="sel_5m_tab2"
+            )
+        with c_f2:
+            chk_exclude_na = st.checkbox("Excluir Programados / N/A", value=True, key="chk_na_tab2")
+
+        df_causes = load_top_causes(p_linea, p_equnr, sel_5m_cat, chk_exclude_na, start_iso, end_iso)
+        if not df_causes.empty:
+            fig_causes = px.bar(
+                df_causes, x="event_count", y="causa_simplificada", orientation="h",
+                color="categoria_5m",
+                title="Top 10 Causas de Intervención",
+                labels={"event_count": "Cantidad de Eventos", "causa_simplificada": "Causa Simplificada", "categoria_5m": "Categoría 5M"},
+                color_discrete_map={
+                    "MAQUINA": "#ff4b4b",
+                    "MANO DE OBRA": "#ffa500",
+                    "MANO_DE_OBRA": "#ffa500",
+                    "METODO": "#0078d4",
+                    "MATERIAL": "#5c2d91",
+                    "N/A": "#00b7c3",
+                    "N_A": "#00b7c3"
+                }
+            )
+
+            fig_causes.update_layout(yaxis={"categoryorder": "total ascending"}, height=390)
+            st.plotly_chart(fig_causes, use_container_width=True)
         else:
-            st.info("No hay textos suficientes.")
+            st.info("No se encontraron causas para el filtro seleccionado.")
 
     st.markdown("---")
     st.subheader("Mapa de Calor Temporal (Día vs Hora)")
+
+
     df_heat = load_temporal_heatmap(p_equnr, p_linea, start_iso, end_iso)
     if not df_heat.empty:
         fig = px.imshow(df_heat.T,
@@ -739,7 +773,8 @@ Tendencia: `{item.get('trend', 'N/A')}`{rec_str}
             recs = load_recommendations(p_equnr, start_iso, end_iso)
 
         urgency_icons = {"URGENTE": "🚨", "PLANIFICADO": "📋", "MONITOREO": "👁️"}
-        fuente_icons  = {"ML": "🤖", "KPI": "📊", "AUDITORIA": "🔍"}
+        fuente_icons  = {"ML": "🤖", "KPI": "📊", "KPI_MECANICO": "⚙️", "5M_MANO_DE_OBRA": "👷", "AUDITORIA": "🔍"}
+
 
         for rec in recs:
             urg_key = rec["urgencia"].split("(")[0].strip().upper()

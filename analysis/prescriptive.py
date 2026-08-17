@@ -85,6 +85,20 @@ class PrescriptiveAnalysis(AnalysisBase):
         ) or 0
         ghost_pct = ghost_total / total_events if total_events > 0 else 0.0
 
+        # ── Regla 5M: Análisis de causales 5M del equipo ──
+        from analysis.taxonomy_5m import classify_cause_5m
+        df_eq_orders = self.query(
+            "SELECT qmtxt, ltxtaufk, auart FROM maintenance_orders WHERE equnr = ? AND start_datetime >= ? AND start_datetime <= ?",
+            (equnr, start, end)
+        )
+        mano_obra_cnt = 0
+        maquina_cnt = 0
+        if not df_eq_orders.empty:
+            cats = df_eq_orders.apply(lambda r: classify_cause_5m(r["qmtxt"], r["ltxtaufk"], r["auart"])["categoria_5m"], axis=1)
+            mano_obra_cnt = int(cats.isin(["MANO DE OBRA", "MANO_DE_OBRA"]).sum())
+            maquina_cnt = int((cats == "MAQUINA").sum())
+
+
         # ── Regla ML 1: Probabilidad alta de falla en 7 días ──
         prob_7d  = ml_pred.get("prob_7d")
         prob_14d = ml_pred.get("prob_14d")
@@ -95,7 +109,7 @@ class PrescriptiveAnalysis(AnalysisBase):
                 "tipo":          "INSPECCION_ML_URGENTE",
                 "prioridad":     1,
                 "urgencia":      "URGENTE (< 7 días)",
-                "mensaje":       f"Modelo ML predice {prob_7d*100:.0f}% de probabilidad de falla en los próximos 7 días.",
+                "mensaje":       f"Modelo ML predice {prob_7d*100:.0f}% de probabilidad de falla mecánica en los próximos 7 días.",
                 "justificacion": f"Top features: {feat_str}. Horizonte 14d: {prob_14d*100:.0f}% de prob.",
                 "fuente":        "ML",
             })
@@ -104,29 +118,40 @@ class PrescriptiveAnalysis(AnalysisBase):
                 "tipo":          "PREVENCION_ML_PLANIFICADA",
                 "prioridad":     2,
                 "urgencia":      "PLANIFICADO (< 14 días)",
-                "mensaje":       f"Modelo ML predice {prob_14d*100:.0f}% de probabilidad de falla en los próximos 14 días.",
+                "mensaje":       f"Modelo ML predice {prob_14d*100:.0f}% de probabilidad de falla física en los próximos 14 días.",
                 "justificacion": f"Riesgo moderado detectado por ML. Prob. 7d: {(prob_7d or 0)*100:.0f}%.",
                 "fuente":        "ML",
             })
 
-        # ── Regla 1: Risk score crítico ──
+        # ── Regla 1: Risk score crítico (Filtro Máquina) ──
         if risk_score >= THRESHOLDS["risk_score_critical"]:
             recs.append({
-                "tipo":          "INSPECCION_CORRECTIVA",
+                "tipo":          "INSPECCION_CORRECTIVA_MECANICA",
                 "prioridad":     1,
                 "urgencia":      "URGENTE (< 48 horas)",
-                "mensaje":       f"Inspección correctiva urgente requerida. Score de riesgo: {risk_score:.0f}/100.",
-                "justificacion": f"El equipo supera el umbral crítico de riesgo ({THRESHOLDS['risk_score_critical']:.0f}). Componentes: {risk['components']}",
-                "fuente":        "KPI",
+                "mensaje":       f"Inspección mecánica urgente requerida. Score de riesgo de Máquina: {risk_score:.0f}/100.",
+                "justificacion": f"El equipo supera el umbral crítico de riesgo ({THRESHOLDS['risk_score_critical']:.0f}). Eventos de Máquina: {maquina_cnt}.",
+                "fuente":        "KPI_MECANICO",
             })
         elif risk_score >= THRESHOLDS["risk_score_high"]:
             recs.append({
-                "tipo":          "MANTENIMIENTO_PREVENTIVO",
+                "tipo":          "MANTENIMIENTO_PREVENTIVO_MECANICO",
                 "prioridad":     2,
                 "urgencia":      "PLANIFICADO (< 2 semanas)",
-                "mensaje":       f"Programar PM02 preventivo en las próximas 2 semanas. Score de riesgo: {risk_score:.0f}/100.",
-                "justificacion": f"Risk score elevado. Tendencia: {risk['trend_direction']}.",
-                "fuente":        "KPI",
+                "mensaje":       f"Programar Mantenimiento Preventivo Mecánico (PM02) en las próximas 2 semanas. Score de riesgo: {risk_score:.0f}/100.",
+                "justificacion": f"Risk score elevado por deterioro físico. Basado en {maquina_cnt} causales de tipo MÁQUINA.",
+                "fuente":        "KPI_MECANICO",
+            })
+
+        # ── Regla 5M Especial: Recomendación Operativa por Mano de Obra ──
+        if mano_obra_cnt >= 2:
+            recs.append({
+                "tipo":          "CAPACITACION_OPERATIVA_5M",
+                "prioridad":     3,
+                "urgencia":      "PLANIFICADO (< 1 semana)",
+                "mensaje":       f"Reforzar capacitación a operadores sobre montaje y ajuste de {equnr}.",
+                "justificacion": f"Se registraron {mano_obra_cnt} eventos atribuibles a MANO DE OBRA (mal acople o ajuste operativo). No requiere reemplazo de piezas.",
+                "fuente":        "5M_MANO_DE_OBRA",
             })
 
         # ── Regla 2: Tendencia deteriorando ──
@@ -185,6 +210,7 @@ class PrescriptiveAnalysis(AnalysisBase):
             })
 
         return sorted(recs, key=lambda x: x["prioridad"])
+
 
     # ------------------------------------------------------------------
     # 6.2 — Priorización de intervenciones

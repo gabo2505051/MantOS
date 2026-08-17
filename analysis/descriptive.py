@@ -476,3 +476,96 @@ class DescriptiveAnalysis(AnalysisBase):
             "top3_equipment": top3[["equnr", "nombre_equipo", "event_count", "downtime_min"]].to_dict("records"),
         }
         return result
+
+    # ------------------------------------------------------------------
+    # 2.5 — Top de Causas Simplificadas 5M
+    # ------------------------------------------------------------------
+
+    def get_top_failure_causes(
+        self,
+        linea: Optional[str] = None,
+        equnr: Optional[str] = None,
+        categoria_5m: Optional[str] = None,
+        exclude_na: bool = True,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        top_n: int = 10,
+    ) -> pd.DataFrame:
+        """
+        Obtiene el Top-N de causas simplificadas clasificadas por la metodología 5M.
+
+        Args:
+            linea: Filtro opcional por línea.
+            equnr: Filtro opcional por equipo.
+            categoria_5m: Filtro por categoría 5M ('MAQUINA', 'MANO_DE_OBRA', 'METODO', 'MATERIAL', 'N_A' o 'Todas').
+            exclude_na: Si es True, excluye la categoría 'N_A' (mantenimientos programados sin afectación).
+            start_date: Fecha inicio ISO.
+            end_date: Fecha fin ISO.
+            top_n: Cantidad máxima de causas a retornar.
+
+        Returns:
+            DataFrame con [categoria_5m, causa_simplificada, event_count, downtime_min, pct_of_total]
+        """
+        from analysis.taxonomy_5m import classify_cause_5m
+
+        start, end = self.clamp_dates(start_date, end_date)
+        filt_equnr = "AND mo.equnr = ?" if equnr else ""
+        filt_linea = "AND e.linea = ?"  if linea  else ""
+        params     = [start, end]
+        if equnr:
+            params.append(equnr)
+        if linea:
+            params.append(linea)
+
+        sql = f"""
+            SELECT
+                mo.aufnr,
+                mo.auart,
+                mo.qmtxt,
+                mo.ltxtaufk,
+                mo.duration_min
+            FROM maintenance_orders mo
+            LEFT JOIN equipment e ON mo.equnr = e.equnr
+            WHERE mo.start_datetime >= ?
+              AND mo.start_datetime <= ?
+              {filt_equnr}
+              {filt_linea}
+        """
+        df = self.query(sql, tuple(params))
+
+        if df.empty:
+            return pd.DataFrame(columns=["categoria_5m", "causa_simplificada", "event_count", "downtime_min", "pct_of_total"])
+
+        classified = df.apply(lambda r: classify_cause_5m(r["qmtxt"], r["ltxtaufk"], r["auart"]), axis=1)
+        df["categoria_5m"] = [c["categoria_5m"] for c in classified]
+        df["causa_simplificada"] = [c["causa_simplificada"] for c in classified]
+
+        if exclude_na:
+            df = df[~df["categoria_5m"].isin(["N/A", "N_A"])]
+
+        if categoria_5m and categoria_5m not in ("Todas", "TODAS"):
+            target_cat = categoria_5m.replace("_", " ").upper()
+            df = df[df["categoria_5m"].str.replace("_", " ").str.upper() == target_cat]
+
+
+        if df.empty:
+            return pd.DataFrame(columns=["categoria_5m", "causa_simplificada", "event_count", "downtime_min", "pct_of_total"])
+
+        df["downtime"] = df["duration_min"].where(df["duration_min"] > 0, 0)
+        summary = (
+            df.groupby(["categoria_5m", "causa_simplificada"])
+            .agg(
+                event_count=("aufnr", "count"),
+                downtime_min=("downtime", "sum")
+            )
+            .reset_index()
+            .sort_values("event_count", ascending=False)
+            .head(top_n)
+        )
+
+        total_events = summary["event_count"].sum()
+        summary["pct_of_total"] = (summary["event_count"] / total_events * 100).round(1) if total_events > 0 else 0.0
+        summary["downtime_min"] = summary["downtime_min"].round(2)
+
+        return summary.reset_index(drop=True)
+
