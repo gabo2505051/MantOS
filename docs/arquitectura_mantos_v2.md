@@ -23,7 +23,6 @@ flowchart TD
         IIOT["⚙️ IIoT / SCADA / PLC\nSYS_IIOT · SYS_SCADA\nEventos PM03 / PM02"]
         OPR["👷 Operadores & Mecánicos\n18 actores catalogados\nPM01 · PM02 · PM03"]
         MANUALES["📚 Manuales Técnicos\nPlanos eléctricos · PDFs\nDocumentación de maquinaria"]
-        NODERED["🔴 Node-RED\nSistema de alarmas\nTrigger de eventos críticos"]
     end
 
     %% ─────────────────────────────────────────
@@ -132,7 +131,7 @@ flowchart TD
     %% FLUJO V2.0 — OCR + EMBEDDINGS
     MANUALES -->|"PDF / imagen"| PRESC20
     PRESC20  -->|"chunks + vectores"| VECTORDB
-    NODERED  -->|"alarma activa"| PRESC20
+    SQLITE   -->|"alertas de falla"| PRESC20
     VECTORDB -->|"Top-K chunks"| PRESC20
     VECTORDB -->|"búsqueda semántica"| NLRAG
 
@@ -180,7 +179,7 @@ flowchart TD
     classDef ui         fill:#0d1b2a,stroke:#f72585,color:#fff,stroke-width:3px
     classDef test       fill:#1b1b2f,stroke:#7209b7,color:#c77dff,stroke-width:1px
 
-    class SAP,IIOT,OPR,MANUALES,NODERED external
+    class SAP,IIOT,OPR,MANUALES external
     class INGEST,CAT,SCHEMA ingesta
     class SQLITE db
     class VECTORDB vdb
@@ -344,7 +343,7 @@ flowchart TD
 
     subgraph ONLINE["🔴 Pipeline Online (tiempo real)"]
         direction LR
-        ALARM["Node-RED\nAlarma activa\n→ equipo · código falla"]
+        ALARM["Motor de Alertas Virtuales\nAlarma activa\n→ equipo · código falla"]
         QUERY["Formulación de query\n'Procedimiento para equipo X\ncon falla Y'"]
         SEARCH["Búsqueda semántica\nTop-K chunks relevantes"]
         LLM["LLM Local\n(Ollama / llama3)\nSíntesis de respuesta"]
@@ -513,7 +512,7 @@ gantt
     Pipeline OCR + Embeddings     :active, 2025-06, 2025-08
     Vector Store (Chroma/Qdrant)  :2025-07, 2025-09
     ML Micro-detenciones          :2025-08, 2025-11
-    RAG Prescriptivo + Node-RED   :2025-09, 2025-12
+    RAG Prescriptivo + Motor Alertas  :2025-09, 2025-12
     Agente NL2SQL (LLM local)     :2025-11, 2026-02
     Agente RAG conversacional     :2025-12, 2026-03
     Integración UI V2.0           :2026-01, 2026-04

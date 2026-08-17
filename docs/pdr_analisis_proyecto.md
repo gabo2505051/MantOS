@@ -63,31 +63,18 @@
 
 ---
 
-## 4. Análisis Específico: "Alarma de Equipo" y Node-RED
+## 4. Omitido de la Arquitectura: Integración con Node-RED
 
-### 4.1 Diagnóstico de Situación
-- **Estado Actual en Código:** Node-RED **NO está implementado** en el código fuente. Su única mención figura en los diagramas conceptuales de la documentación V2.0 (`docs/arquitectura_mantos_v2.md`).
-- **Preocupación del Usuario:** El usuario considera no involucrarse con Node-RED por ahora y trabajar exclusivamente con los datos ya existentes de la Planta.
+### 4.1 Definición y Decisión Técnica
+- **Decisión:** Se ha **omitido y eliminado de forma definitiva la integración con Node-RED** en la arquitectura de MantOS.
+- **Justificación:** El sistema opera al 100% de su capacidad analítica basándose exclusivamente en los datos históricos y sintéticos ya existentes de la Planta (órdenes de trabajo `PM01`, `PM02` y `PM03` de SAP PM).
 
-### 4.2 Viabilidad de Operar 100% con Datos de Planta
-**Confirmación Técnica:** MantOS **NO requiere Node-RED ni hardware/telemetría externa** para funcionar a su máxima capacidad analítica actual.
-
-El sistema ya procesa toda la información necesaria a partir de los datos históricos y sintéticos de la Planta Galletera Sur (PGS):
-- **Eventos Correctivos (`PM01`):** Permiten calcular paros no planificados, MTTR y MTBF.
-- **Eventos Preventivos (`PM02`):** Permiten evaluar el cumplimiento del plan de mantenimiento.
-- **Eventos Operacionales (`PM03`):** Registran micro-detenciones y alertas de línea.
-
-### 4.3 Motor de "Alarmas Virtuales" Basado en Datos (Sin Node-RED)
-En lugar de depender de sensores físicos que envíen datos vía Node-RED, MantOS genera sus **"Alertas de Equipo" de manera dinámica** dentro de `analysis/prescriptive.py` (`check_alerts()`) analizando los propios datos de planta:
+### 4.2 Motor de "Alarmas Virtuales" Integrado (Sin Node-RED)
+En lugar de requerir infraestructura externa con Node-RED o sensores físicos, MantOS genera sus **"Alertas de Equipo" de manera nativa** dentro de `analysis/prescriptive.py` (`check_alerts()`) analizando directamente los datos de la planta:
 1. **Alerta por Incremento de Frecuencia:** Se dispara cuando un equipo registra un incremento de paros mayor a 2 desviaciones estándar ($Z\text{-score} > 2.0$) respecto a su historial.
 2. **Alerta por Caída de MTBF:** Se dispara cuando el tiempo medio entre fallas de un equipo cae más de un 30% en los últimos 30 días.
 3. **Alerta por Score de Riesgo Crítico:** Se activa automáticamente cuando el índice de riesgo compuesto supera los 70 puntos.
 4. **Alerta por Micro-detenciones Acumuladas:** Detecta secuencias inusuales en eventos `PM03` que anteceden paradas mayores.
-
-### 4.4 Estrategia de Desacoplamiento e Integración Futura
-Si en el futuro se desea incorporar Node-RED o señales PLC en tiempo real:
-- **Enfoque Desacoplado:** Node-RED debe limitarse a actuar como un emisor de eventos que inserte filas en la tabla `maintenance_orders` o en una tabla auxiliar `equipment_alarms`.
-- **Independencia del Core:** El motor analítico de MantOS continuará leyendo la base de datos de manera uniforme, sin importar si los registros provinieron de un export mensual de SAP o de un nodo de Node-RED.
 
 ---
 
@@ -124,4 +111,5 @@ Se incorporó exitosamente la capa de **Clasificación Causal por Metodología 5
 
 MantOS presenta un **estado de desarrollo altamente maduro, funcional y sólido en su versión MVP (V1.0)**. El core analítico, las predicciones ML, la taxonomía 5M y el dashboard visual funcionan de forma integrada y ofrecen un valor operativo inmediato para la toma de decisiones de mantenimiento.
 
-La decisión de **omitir la integración con Node-RED en la etapa actual es técnicamente acertada y completamente viable**, complementada con la nueva **Categorización 5M** que garantiza que el Plan de Acción Prescriptivo se concentre únicamente en fallas reales de maquinaria.
+La **omisión definitiva de Node-RED en la arquitectura** simplifica el despliegue del sistema sin restar capacidad analítica, basándose 100% en datos reales de planta y en la nueva **Categorización 5M** que garantiza un Plan de Acción Prescriptivo preciso concentrado en fallas mecánicas reales.
+
