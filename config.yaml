@@ -1,0 +1,63 @@
+# ==============================================================================
+# 🏭 MantOS — Configuración Centralizada de Cliente y Reglas de Negocio
+# ==============================================================================
+# Este archivo permite calibrar todos los umbrales de riesgo, reglas prescriptivas,
+# ponderaciones de modelos y parámetros de operación para un cliente específico
+# sin necesidad de modificar el código fuente en Python.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 🏢 METADATOS DEL CLIENTE / PLANTA
+# ------------------------------------------------------------------------------
+client:
+  name: "Planta Galletera Sur (PGS)"      # Nombre de la empresa o cliente
+  facility: "Línea de Producción LA4"    # Planta o línea desplegada
+  environment: "production"                # Entorno: 'development' | 'staging' | 'production'
+
+# ------------------------------------------------------------------------------
+# ⏱️ PARÁMETROS OPERACIONALES DE LA PLANTA
+# ------------------------------------------------------------------------------
+operation:
+  # Horas de operación diarias proyectadas de la planta (ej: 24.0 para 24/7, 16.0 para 2 turnos)
+  operating_hours_per_day: 24.0
+
+  # Ventana de datos históricos (días hacia atrás) para extraer características en Machine Learning
+  ml_lookback_days: 60
+
+  # Paso de la ventana deslizante (días) para generar muestras de entrenamiento en ML
+  ml_step_days: 14
+
+# ------------------------------------------------------------------------------
+# ⚖️ PONDERACIÓN DEL SCORE DE RIESGO COMPUESTO (0 - 100)
+# Ajusta la importancia de cada factor en el cálculo de salud de los equipos.
+# NOTA: La suma de los 4 pesos debe ser exactamente 1.00 (100%).
+# ------------------------------------------------------------------------------
+risk_model:
+  weights:
+    frecuencia_reciente: 0.40  # 40%: Paradas en las últimas 4 semanas vs promedio histórico
+    tendencia_mtbf: 0.30       # 30%: Dirección de la tendencia (deterioro / estable / mejora)
+    recurrencia: 0.20          # 20%: Frecuencia de paradas repetidas en < 7 días
+    ghost_stops_pct: 0.10      # 10%: Porcentaje de paros fantasma (duración = 0 min)
+
+# ------------------------------------------------------------------------------
+# 💡 UMBRALES DEL MOTOR PRESCRIPTIVO Y ALERTAS
+# Define los valores límite que disparan las recomendaciones y niveles de riesgo.
+# ------------------------------------------------------------------------------
+prescriptive:
+  thresholds:
+    # --- Niveles de Score de Riesgo (0-100) ---
+    risk_score_critical: 70.0   # Score >= 70 → Alerta CRÍTICA e Inspección Urgente (< 48h)
+    risk_score_high: 45.0       # Score >= 45 → Alerta ALTA y Programación de Preventivo (PM02)
+
+    # --- Umbrales de Machine Learning ---
+    ml_prob_critical: 0.75      # Probabilidad ML >= 75% a 7 días → Inspección ML Urgente
+    ml_prob_high: 0.50          # Probabilidad ML >= 50% a 14 días → Prevención ML Planificada
+
+    # --- Métricas Técnicas de Mantenimiento ---
+    availability_critical: 0.95 # Disponibilidad < 95% (0.95) → Alerta por Baja Disponibilidad
+    mttr_high_min: 60.0         # MTTR > 60 min → Sugerir revisión del procedimiento de reparación
+    mtbf_drop_pct: 0.30         # Caída de MTBF > 30% (0.30) → Disparar Análisis de Causa Raíz (RCA)
+
+    # --- Calidad de Datos y Anomalías ---
+    ghost_pct_warning: 0.20     # > 20% (0.20) de paros fantasma → Alerta de Auditoría de Registro OT
+    weekly_spike_zscore: 2.0    # Z-score >= 2.0 desviaciones estándar → Semana Anómala

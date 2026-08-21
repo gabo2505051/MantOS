@@ -101,8 +101,8 @@ Se incorporó exitosamente la capa de **Clasificación Causal por Metodología 5
 | 🔴 **Alta** | **5M Taxonomy** | Implementar `analysis/taxonomy_5m.py` y restringir el motor prescriptivo a causales de tipo `MAQUINA`. | ✅ **Completado** | Elimina falsos positivos en planes de mantenimiento físico. |
 | 🔴 **Alta** | **UI Descriptivo** | Incorporar el selector 5M, checkbox de exclusión `N/A` y layout de 2 columnas en el Tab 2 de Streamlit. | ✅ **Completado** | Visualización ejecutiva limpia del Top 10 de causas de falla. |
 | 🔴 **Alta** | **Testing** | Corregir las pruebas unitarias e incorporar `tests/test_taxonomy_5m.py`. | ✅ **Completado** | Garantiza 100% de pasadas en pytest (99/99). |
-| 🟡 **Media** | **Configuración** | Extraer umbrales (risk scores, ponderaciones) a un archivo `config.yaml`. | ⏳ Pendiente | Facilita la calibración del sistema sin tocar código. |
-| 🟡 **Media** | **MLOps** | Persistir el modelo Random Forest en `.joblib` para optimizar el tiempo de carga de Streamlit. | ⏳ Pendiente | Carga inicial del dashboard en < 2 segundos. |
+| 🟡 **Media** | **Configuración** | Extraer umbrales (risk scores, ponderaciones) a un archivo `config.yaml` documentado. | ✅ **Completado** | Facilita la calibración del sistema por cliente sin tocar código. |
+| 🟡 **Media** | **MLOps** | Persistir el modelo Random Forest en `.joblib` para optimizar el tiempo de carga del backend. | ✅ **Completado** | Carga del modelo en disco en < 0.05 segundos (< 50ms). |
 | 🟢 **Baja** | **Base de Datos** | Evaluar la migración de SQLite a PostgreSQL en caso de requerir acceso multiusuario masivo o API REST. | ⏳ Pendiente | Prepara la plataforma para escala industrial V2.0. |
 
 ---

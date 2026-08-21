@@ -21,8 +21,11 @@ DEFAULT_DB   = _PROJECT_ROOT / "data" / "mantos.db"
 DATA_START = "2024-04-01T00:00:00Z"
 DATA_END   = "2026-03-31T23:59:59Z"
 
-# Horas de operación diarias (asumimos 24/7 — ajustable)
-OPERATING_HOURS_PER_DAY = 24
+from config_loader import get_operation_params
+
+# Horas de operación diarias (parametrizables vía config.yaml)
+OPERATING_HOURS_PER_DAY = get_operation_params().get("operating_hours_per_day", 24.0)
+
 
 # Equipos de LA4 (línea principal de alfajores)
 LA4_EQUIPMENT = [

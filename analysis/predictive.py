@@ -12,6 +12,7 @@ Subtareas:
 
 import json
 import pickle
+import joblib
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -25,11 +26,13 @@ from analysis.kpis import KPICalculator
 from analysis.diagnostic import DiagnosticAnalysis
 
 # ──────────────────────────────────────────────────────────────
-# Paths para persistir el modelo entrenado
+# Paths para persistir el modelo entrenado (Optimizado con joblib)
 # ──────────────────────────────────────────────────────────────
 _MODEL_DIR  = Path(__file__).resolve().parent.parent / "data" / "models"
-_MODEL_PATH = _MODEL_DIR / "failure_classifier.pkl"
+_MODEL_PATH = _MODEL_DIR / "failure_classifier.joblib"
+_LEGACY_MODEL_PATH = _MODEL_DIR / "failure_classifier.pkl"
 _META_PATH  = _MODEL_DIR / "feature_metadata.json"
+
 
 
 class PredictiveAnalysis(AnalysisBase):
@@ -168,21 +171,29 @@ class PredictiveAnalysis(AnalysisBase):
         ) or 0
         ghost_pct   = (ghosts / total * 100) if total > 0 else 0
         ghost_score = min(100.0, ghost_pct * 2.0)
+        from config_loader import get_risk_weights, get_thresholds
+
+        w = get_risk_weights()
+        th = get_thresholds()
 
         risk_score = (
-            freq_score  * 0.40 +
-            trend_score * 0.30 +
-            rec_score   * 0.20 +
-            ghost_score * 0.10
+            freq_score  * w.get("frecuencia_reciente", 0.40) +
+            trend_score * w.get("tendencia_mtbf", 0.30) +
+            rec_score   * w.get("recurrencia", 0.20) +
+            ghost_score * w.get("ghost_stops_pct", 0.10)
         )
         risk_score = round(min(100.0, max(0.0, risk_score)), 1)
 
-        if risk_score >= 70:
+        thresh_crit = th.get("risk_score_critical", 70.0)
+        thresh_high = th.get("risk_score_high", 45.0)
+
+        if risk_score >= thresh_crit:
             risk_level = "CRITICO"
-        elif risk_score >= 45:
+        elif risk_score >= thresh_high:
             risk_level = "ALTO"
         elif risk_score >= 25:
             risk_level = "MEDIO"
+
         else:
             risk_level = "BAJO"
 
@@ -467,9 +478,17 @@ class PredictiveAnalysis(AnalysisBase):
         _MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
         if _MODEL_PATH.exists() and not force:
-            # Cargar modelo existente
-            with open(_MODEL_PATH, "rb") as f:
+            # Cargar modelo optimizado con joblib
+            self._clf = joblib.load(_MODEL_PATH)
+            if _META_PATH.exists():
+                with open(_META_PATH) as f:
+                    self._meta = json.load(f)
+            return self._meta
+        elif _LEGACY_MODEL_PATH.exists() and not force:
+            # Migrar modelo legado pickle a joblib
+            with open(_LEGACY_MODEL_PATH, "rb") as f:
                 self._clf = pickle.load(f)
+            joblib.dump(self._clf, _MODEL_PATH, compress=3)
             if _META_PATH.exists():
                 with open(_META_PATH) as f:
                     self._meta = json.load(f)
@@ -505,8 +524,8 @@ class PredictiveAnalysis(AnalysisBase):
 
         self._clf = {"clf7": clf7, "clf14": clf14, "feature_cols": feature_cols}
 
-        with open(_MODEL_PATH, "wb") as f:
-            pickle.dump(self._clf, f)
+        # Guardar comprimido con joblib
+        joblib.dump(self._clf, _MODEL_PATH, compress=3)
 
         self._meta = {
             "trained_at":       datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -524,12 +543,19 @@ class PredictiveAnalysis(AnalysisBase):
         return self._meta
 
     def _load_model(self):
-        """Carga el modelo desde disco si no está en memoria."""
+        """Carga el modelo desde disco (optimizado con joblib) si no está en memoria."""
         if self._clf is not None:
             return True
         if _MODEL_PATH.exists():
-            with open(_MODEL_PATH, "rb") as f:
+            self._clf = joblib.load(_MODEL_PATH)
+            if _META_PATH.exists():
+                with open(_META_PATH) as f:
+                    self._meta = json.load(f)
+            return True
+        elif _LEGACY_MODEL_PATH.exists():
+            with open(_LEGACY_MODEL_PATH, "rb") as f:
                 self._clf = pickle.load(f)
+            joblib.dump(self._clf, _MODEL_PATH, compress=3)
             if _META_PATH.exists():
                 with open(_META_PATH) as f:
                     self._meta = json.load(f)

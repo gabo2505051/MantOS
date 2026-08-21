@@ -20,20 +20,13 @@ from analysis.base import AnalysisBase
 from analysis.kpis import KPICalculator
 from analysis.predictive import PredictiveAnalysis
 
+from config_loader import get_thresholds
+
 # ------------------------------------------------------------------
-# Umbrales de KPIs para reglas prescriptivas
+# Umbrales de KPIs para reglas prescriptivas (dinámicos desde config.yaml)
 # ------------------------------------------------------------------
-THRESHOLDS = {
-    "risk_score_critical":   70.0,    # score >= 70 → acción urgente
-    "risk_score_high":       45.0,    # score 45-70 → planificar PM02
-    "mtbf_drop_pct":         0.30,    # caída > 30% → revisar causa raíz
-    "ghost_pct_warning":     0.20,    # > 20% ghost stops → revisar registro
-    "weekly_spike_zscore":   2.0,     # Z-score > 2 → semana anómala
-    "mttr_high_min":         60.0,    # MTTR > 60 min → intervención compleja
-    "availability_critical":  0.95,   # < 95% → equipo en estado crítico
-    "ml_prob_critical":      0.75,    # prob ML >= 75% → riesgo crítico
-    "ml_prob_high":          0.50,    # prob ML >= 50% → riesgo alto
-}
+THRESHOLDS = get_thresholds()
+
 
 SEVERITIES = ("CRITICA", "ALTA", "MEDIA", "BAJA")
 
